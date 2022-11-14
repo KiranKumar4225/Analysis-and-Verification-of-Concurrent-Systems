@@ -1,0 +1,209 @@
+MODULE agentA (states, stateb, msgs, msgb)
+VAR
+  state : {idle, receive, send};
+  msga : {0, m1, m2, m3, m4};
+  A_count_m1 : 0..5;
+  A_count_m2 : 0..5;
+  A_count_m3 : 0..5;
+  A_count_m4 : 0..5;
+
+ASSIGN
+  init(state) := idle;
+  init(msga) := 0;
+  init(A_count_m1) := 0;
+  init(A_count_m2) := 0;
+  init(A_count_m3) := 0;
+  init(A_count_m4) := 0;
+
+  next(state) :=
+   case
+    state=idle & msga=m1: send;
+    state=send & states=receive & msgs=m2 : receive;
+    state=send & stateb=receive & msgb=m4 : receive;
+    state=receive & msga=m3 : send;
+    TRUE : state;
+   esac;
+
+
+  next(msga) :=
+   case
+    state=idle & states=idle : m1;
+    state=send & msgs=m2 & stateb=idle : m3;
+    TRUE : 0;
+   esac;
+
+  next(A_count_m1) :=
+   case 
+     next(msga)=m1 & next(state) = idle & A_count_m1 = 5 : 5;
+     next(msga)=m1 & next(state) = idle : A_count_m1 + 1;
+     TRUE : A_count_m1;
+   esac;
+ 
+   next(A_count_m2) :=
+   case 
+     next(msgs)=m2 & next(states)=receive & state=idle & A_count_m2 = 5 : 5;
+     next(msgs)=m2 & next(states)=receive & state=idle : A_count_m2 + 1;
+     TRUE : A_count_m2;
+   esac;
+
+   next(A_count_m3) :=
+   case 
+     next(msga)=m3 & next(state) = receive & A_count_m3 = 5 : 5;
+     next(msga)=m3 & next(state) = receive : A_count_m3 + 1;
+     TRUE : A_count_m3;
+   esac;
+ 
+   next(A_count_m4) :=
+   case 
+     next(msgb)=m4 & next(stateb)=receive & next(state)=send & A_count_m4 = 5 : 5;
+     next(msgb)=m4 & next(stateb)=receive & next(state)=send : A_count_m4 + 1;
+     TRUE : A_count_m4;
+   esac;
+
+
+MODULE agentB (statea, statei, msga, msgi)
+VAR
+  state : {idle, receive, send};
+  msgb : {0, m3, m4, m5, m6};
+  B_count_m3 : 0..5;
+  B_count_m4 : 0..5;
+
+ASSIGN
+  init(state) := idle;
+  init(msgb) := 0;
+  init(B_count_m3) := 0;
+  init(B_count_m4) := 0;
+  
+  next(state) :=
+   case
+    state=idle & msga=m3: receive;
+    state=receive & msgb=m4 : send;
+    state=send & msgi=m3 : receive;
+    state=receive & msgb=m6 : send;
+    TRUE : state;
+   esac;
+
+  next(msgb) :=
+   case
+    state=idle & msga=m3 : m4;
+    state=send & msgi=m3 : m6;
+    TRUE : 0;
+   esac;
+
+   next(B_count_m3) :=                                      
+   case 
+     ((next(msga)=m3 & next(statea) = receive & state=idle) | (next(msgi)=m3 & statei = receive & next(state)=send)) & B_count_m3 = 5 : 5;
+     ((next(msga)=m3 & next(statea) = receive & state=idle) | (next(msgi)=m3 & statei = receive & next(state)=send)): B_count_m3 + 1;
+     TRUE : B_count_m3;
+   esac;
+ 
+   next(B_count_m4) :=						
+   case 
+     (next(msgb)=m4 | next(msgb)=m6) & next(state)=receive & B_count_m4 = 5 : 5;
+     (next(msgb)=m4 | next(msgb)=m6) & next(state)=receive : B_count_m4 + 1;
+     TRUE : B_count_m4;
+   esac;
+   
+
+MODULE Intruder (statea,stateb,msga,msgb)
+
+VAR
+  state : {idle, receive, send};
+  msgi : {0, m3, m5, m6};
+  I_count_m1 : 0..5;
+  I_count_m3 : 0..5;
+  I_count_m5 : 0..5;
+  I_count_m6 : 0..5;
+
+ASSIGN
+  init(state) := idle;
+  init(msgi) := 0;
+  init(I_count_m3) := 0;
+  init(I_count_m5) := 0;
+  init(I_count_m6) := 0;
+
+  next(state) :=
+   case
+    state=idle & msga=m3: receive;
+    state=receive & msgi=m3 : send;
+    state=send & msgb=m6 : receive;
+    TRUE : state;
+   esac;
+
+  next(msgi) :=
+   case
+    state=idle & msga=m3 & stateb=send: m3;
+    TRUE : 0;
+   esac;
+
+  next(I_count_m3) :=
+   case 
+     next(msga)=m3 & next(statea) = receive & state=idle & I_count_m3 = 5 : 5;
+     next(msga)=m3 & next(statea) = receive & state=idle : I_count_m3 + 1;
+     TRUE : I_count_m3;
+   esac;
+ 
+   next(I_count_m5) :=
+   case 
+     next(msgi)=m3 & next(state)= receive & I_count_m5 = 5 : 5;
+     next(msgi)=m3 & next(state)= receive : I_count_m5 + 1;
+     TRUE : I_count_m5;
+   esac;
+
+   next(I_count_m6) :=
+   case 
+     next(msgb)=m6 & next(stateb) = receive & next(state) = send & I_count_m6 = 5 : 5;
+     next(msgb)=m6 & next(stateb) = receive & next(state) = send : I_count_m6 + 1;
+     TRUE : I_count_m6;
+   esac;
+ 
+
+MODULE server (statea, msga)
+
+VAR
+  state : {idle, receive, send};
+  msgs : {0, m1, m2};
+  S_count_m1 : 0..5;
+  S_count_m2 : 0..5;
+
+ASSIGN
+   init(S_count_m1) := 0;
+   init(S_count_m2) := 0;
+   init(msgs) := 0;
+   init(state) := idle;
+   next(state) :=
+   case
+    state=idle & msga=m1 : receive;
+    state=receive & msgs=m2 : send;
+    TRUE : state;
+   esac;
+   
+   next(msgs) :=
+   case
+     state=idle & msga=m1 : m2;
+     TRUE : 0;
+   esac;
+
+   next(S_count_m1) :=
+   case 
+     next(msga)=m1 & next(statea)=idle & state=idle & S_count_m1 = 5 : 5;
+     next(msga)=m1 & next(statea)=idle & state=idle: S_count_m1 + 1;
+     TRUE : S_count_m1;
+   esac;
+ 
+   next(S_count_m2) :=
+   case 
+     next(msgs)=m2 & next(state=receive) & S_count_m2 = 5 : 5;
+     next(msgs)=m2 & next(state=receive) : S_count_m2 + 1;
+     TRUE : S_count_m2;
+   esac;
+
+   
+
+MODULE main
+VAR
+  a : process agentA(s.state,b.state,s.msgs, b.msgb);
+  b : process agentB(a.state,i.state,a.msga,i.msgi);
+  s : process server(a.state, a.msga);
+  i : process Intruder(a.state,b.state,a.msga,b.msgb);
+

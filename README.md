@@ -1,5 +1,6 @@
 # Analysis-and-Verification-of-Concurrent-Systems
 
+As part of the MSc Cyber security course, I have completed this module and its coursework has been uploaded. The description of this module is provided below.
 
 ## Introduction and Context
 This module will introduce you to the basic theory and principles of concurrent programming, their use in designing computer programs, with a special focus 
